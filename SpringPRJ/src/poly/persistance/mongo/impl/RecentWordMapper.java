@@ -52,7 +52,7 @@ public class RecentWordMapper implements IRecentWordMapper {
 	
 	        projection.append("reg_dt", "$reg_dt");
 	        projection.append("_id", 0);
-	        
+	        //test
 	        
 
 		
