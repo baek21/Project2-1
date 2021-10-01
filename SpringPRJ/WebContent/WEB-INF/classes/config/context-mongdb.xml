@@ -10,8 +10,9 @@
           http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
 	
 	<!-- AWS에 저장된 MongoDB 사용 
-	<mongo:mongo-client host="13.124.9.63"
-		port="27017" credentials="myUser:rnlcksgek0621@MyDB" id="mongo">
+	<mongo:mongo-client host=""
+		port="27017" credentials="" id="mongo">
+		
 	</mongo:mongo-client>-->
 	<!-- vmware MongoDB 사용 -->
 	<mongo:mongo-client host="192.168.8.136"

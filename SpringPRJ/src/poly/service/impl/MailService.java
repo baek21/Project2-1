@@ -24,7 +24,7 @@ public class MailService implements IMailService {
    
    final String host = "smtp.google.com";
    final String user = "eword0001@gmail.com";
-   final String password = "20210616";
+   final String password = "";
    
    @Override
    public int doSendMail(MailDTO pDTO) {

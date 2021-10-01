@@ -124,7 +124,7 @@ public class UserTextService implements IUserTextService{
 
 					String key = (String) it.next();
 					int frequency = Integer.parseInt(rMap.get(key).toString());
-					//String json = getUrlForJSON("http://13.124.9.63:5000/wordMeanAPI?search_word=" + key);
+					//String json = getUrlForJSON("http://:5000/wordMeanAPI?search_word=" + key);
 					String json = getUrlForJSON("http://127.0.0.1:8001/wordMeanAPI?search_word=" + key);
 					log.info("json : " + json);
 

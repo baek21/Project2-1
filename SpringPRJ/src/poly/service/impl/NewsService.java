@@ -113,7 +113,8 @@ public class NewsService implements INewsService {
 		boolean res = false;
 		
 		// API 이용해서 웹 기사 정보 가져오기
-		String json = getUrlForJSON("http://13.124.9.63:5000/newsDataAPI");
+		//String json = getUrlForJSON("http://:5000/newsDataAPI");
+		String json = getUrlForJSON("http://127.0.0.1:8001/newsDataAPI");
 		log.info("json : " + json);
 		
 		// 문자열을 json 형태의 데이터 구조로 변경하기 위한 객체를 메모리에 올림
@@ -210,7 +211,8 @@ public class NewsService implements INewsService {
 
 			String key = (String) it.next();
 			String frequency = rMap.get(key).toString();
-			String json = getUrlForJSON("http://13.124.9.63:5000/wordMeanAPI?search_word=" + key);
+			//String json = getUrlForJSON("http://:5000/wordMeanAPI?search_word=" + key);
+			String json = getUrlForJSON("http://127.0.0.1:8001/wordMeanAPI?search_word=" + key);
 			log.info("json : " + json);
 
 			// String 변수의 문자열을 json 형태의 데이터 구조로 변경하기 위해 자바 최상위 Object 변화

@@ -382,7 +382,7 @@ public class OcrController {
 				// 웹서버에 업로드한 파일 저장하는 물리적 경로
 				String saveFilePath = FileUtil.mkdirForDate(FILE_DOWNLOAD_SAVE_PATH, user_id);
 				String saveFileExt = ".txt";
-				String saveFileName = "Image" + reg_dt + "_Engilsh_Word" + saveFileExt;
+				String saveFileName = "Image" + reg_dt + "_English_Word" + saveFileExt;
 				String fullFileInfo = saveFilePath + "/" + saveFileName;
 								
 				log.info("사용자가 다운로드할 텍스트 파일 생성. path : " + fullFileInfo);
