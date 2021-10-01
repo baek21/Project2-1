@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mongo="http://www.springframework.org/schema/data/mongo"
+	xsi:schemaLocation="
+          http://www.springframework.org/schema/data/mongo
+          http://www.springframework.org/schema/data/mongo/spring-mongo-2.2.xsd
+          http://www.springframework.org/schema/beans
+          http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+	
+	<!-- AWS에 저장된 MongoDB 사용 
+	<mongo:mongo-client host="13.124.9.63"
+		port="27017" credentials="myUser:rnlcksgek0621@MyDB" id="mongo">
+	</mongo:mongo-client>-->
+	<!-- vmware MongoDB 사용 -->
+	<mongo:mongo-client host="192.168.8.136"
+		port="27017" credentials="myUser:1234@MyDB" id="mongo">
+	</mongo:mongo-client>
+
+	<mongo:db-factory dbname="MyDB" mongo-ref="mongo"
+		id="mongoDbFactory" />
+
+	<bean id="mongoTemplate"
+		class="org.springframework.data.mongodb.core.MongoTemplate">
+		<constructor-arg name="mongoDbFactory"
+			ref="mongoDbFactory" />
+	</bean>
+
+</beans>
+
