@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.bson.Document;
@@ -262,6 +263,65 @@ public class OcrMapper implements IOcrMapper {
 
 		log.info(this.getClass().getName() + ".ocrResultDelete End!");
 
+	}
+	
+	
+	/**
+	 * MongoDB에 저장된 이미지 데이터 가져오기
+	 */
+	@Override
+	public Map<String, String> getImageInfo(String reg_id, String reg_dt) throws Exception {
+		
+		log.info(this.getClass().getName() + ".getImageInfo Start!");
+
+		String colNm = "OcrResult_" + reg_id;
+		
+		MongoCollection<Document> col = mongodb.getCollection(colNm);
+
+		// 조회 결과 중 출력할 컬럼들(SQL의 SELECT절과 FROM절 가운데 컬럼들과 유사함)
+		Document projection = new Document();
+
+		// MongoDB는 무조건 ObjectID가 자동생성되며, ObjectID는 사용하지 않을 때, 조회할 필요가 없음
+		// ObjectID를 가지고 오지 않을 때 사용함
+		// projection.append("_id", 0);
+
+		projection.append("save_file_name", "$save_file_name");
+		projection.append("save_file_path", "$save_file_path");
+		projection.append("original_file_name", "$original_file_name");
+
+		// MongoDB의 find 명령어를 통해 조회할 경우 사용함
+		// 조회하는 데이터의 양이 적은 경우, find를 사용하고, 데이터양이 많은 경우 무조건 Aggregate 사용한다
+		// 결과 조회는 Find와 Aggregation이 분리되어 Find 쿼리는 FindIterable을 사용해야함
+		// .first() 첫번째 document 불러오는 옵션
+		Document doc = col.find(new Document()).projection(projection).first();
+	
+		if (doc == null) {
+			doc = new Document();
+		}
+
+		String save_file_name = CmmUtil.nvl(doc.getString("save_file_name")); // 서버에 저장된 파일명
+		String save_file_path = CmmUtil.nvl(doc.getString("save_file_path")); // 서버에 저장된 파일경로
+		String original_file_name = CmmUtil.nvl(doc.getString("original_file_name")); // 업로드된 원래 파일명
+
+		// log.info(save_file_name);
+		// log.info(save_file_path);
+		// log.info(original_file_name);
+
+		// 조회 결과를 전달하기 위한 객체 생성하기
+		Map<String, String> rMap = new HashMap<String, String>();
+
+		rMap.put("save_file_name", save_file_name);
+		rMap.put("save_file_path", save_file_path);
+		rMap.put("original_file_name", original_file_name);
+
+		// 메모리에서 강제로 비우기
+		doc = null;
+		col = null;
+		projection = null;
+
+		log.info(this.getClass().getName() + ".getImageInfo End!");
+
+		return rMap;
 	}
 
 }
