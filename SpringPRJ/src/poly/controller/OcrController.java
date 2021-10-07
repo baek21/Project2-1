@@ -3,7 +3,9 @@ package poly.controller;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,6 +22,7 @@ import org.apache.log4j.Logger;
 import org.bson.Document;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -89,13 +92,49 @@ public class OcrController {
 
 		log.info("웹에서 넘어온 reg_id : " + reg_id);
 		log.info("웹에서 넘어온 reg_dt : " + reg_dt);
-
+		
+		// MongoDB에서 사용자 이미지 정보 가져오기
+		Map<String, String> rMap = ocrService.getImageInfo(reg_id, reg_dt);
+		
+		// 이미지 파일 경로
+		String imgPath = CmmUtil.nvl((String) rMap.get("save_file_path")) + CmmUtil.nvl((String) rMap.get("save_file_name"));
+		// 이미지 원본 이름
+		String imgNm = CmmUtil.nvl((String) rMap.get("original_file_name"));
+				
 		model.addAttribute("reg_id", reg_id);
 		model.addAttribute("reg_dt", reg_dt);
+		model.addAttribute("imgPath", imgPath);
+		model.addAttribute("imgNm", imgNm);
 
 		log.info(this.getClass().getName() + ".WordMean_List end!");
 
 		return "/ocr/WordMean_List";
+	}
+	
+	@RequestMapping(value = "ocr/WordMean_Img")
+	public void WordMean_Img(HttpSession session,HttpServletRequest request, HttpServletResponse response) throws Exception{
+		
+		log.info(this.getClass().getName() + ".WordMean_Img start!");
+		
+		String imgPath = CmmUtil.nvl((String) session.getAttribute("imgPath"));
+		
+		log.info(imgPath);
+		File fi = new File(imgPath);
+		
+		// 이미지 파일이 존재하면 실행
+		if(fi.exists()) {
+			// 이미지를 jsp에 출력하기
+			FileInputStream f = new FileInputStream(imgPath);
+			OutputStream out = response.getOutputStream();
+		    int length;
+		    byte[] buffer = new byte[10];
+		    while((length=f.read(buffer)) != -1){
+		    	out.write(buffer, 0, length);
+		    }
+		}
+		
+		log.info(this.getClass().getName() + ".WordMean_Img end!");
+		
 	}
 
 	/**
@@ -138,11 +177,30 @@ public class OcrController {
 
 					// 웹서버에 업로드한 파일 저장하는 물리적 경로
 					String saveFilePath = FileUtil.mkdirForDate(FILE_UPLOAD_SAVE_PATH, user_id);
-
+										
 					// 업로드 되는 파일을 서버에 저장
 					String fullFileInfo = saveFilePath + "/" + saveFileName;
-					mf.transferTo(new File(fullFileInfo));
-
+					
+					
+					//mf.transferTo(new File(fullFileInfo));
+					
+					// --------------------------
+					//윈도우 일때
+					FileOutputStream fos = new FileOutputStream(fullFileInfo);
+					// 파일 저장할 경로 + 파일명을 파라미터로 넣고 fileOutputStream 객체 생성하고
+	                InputStream is = mf.getInputStream();
+	                // file로 부터 inputStream을 가져온다.
+                	int readCount = 0;
+                    byte[] buffer = new byte[1024];
+                    // 파일을 읽을 크기 만큼의 buffer를 생성하고
+                    // ( 보통 1024, 2048, 4096, 8192 와 같이 배수 형식으로 버퍼의 크기를 잡는 것이 일반적이다.)
+                    while ((readCount = is.read(buffer)) != -1) {
+                        //  파일에서 가져온 fileInputStream을 설정한 크기 (1024byte) 만큼 읽고
+                        
+                        fos.write(buffer, 0, readCount);
+                        // 위에서 생성한 fileOutputStream 객체에 출력하기를 반복한다
+                    }
+                    // --------------------------
 					pDTO = new OcrDTO();
 
 					pDTO.setSave_file_name(saveFileName);
@@ -501,5 +559,6 @@ public class OcrController {
 
 		}
 	}
+	
 
 }

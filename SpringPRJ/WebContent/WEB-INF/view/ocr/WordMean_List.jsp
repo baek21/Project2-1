@@ -4,6 +4,9 @@
 <%
 String reg_id = CmmUtil.nvl((String)request.getAttribute("reg_id").toString());
 String reg_dt = CmmUtil.nvl((String)request.getAttribute("reg_dt").toString());
+ 
+String imgNm = CmmUtil.nvl((String)request.getAttribute("imgNm").toString());
+session.setAttribute("imgPath", CmmUtil.nvl((String)request.getAttribute("imgPath").toString()));
 %>
 
 <title>영어 단어장</title>
@@ -31,6 +34,7 @@ String reg_dt = CmmUtil.nvl((String)request.getAttribute("reg_dt").toString());
 		var basicContent = '';
 		
 		// 영어 단어 담을 요소
+		basicContent += '<img src="WordMean_Img.do">';
 		basicContent += '<div id="fluid" class="container-fluid">';
 		basicContent +=	'<div id="conRow" class="row"></div>';		
 		basicContent += '</div>';

@@ -27,12 +27,13 @@ public interface IOcrMapper {
 	 * MongoDB에서 OCR결과 데이터 삭제
 	 * @param rMap
 	 */
-	public void ocrResultDelete(HashMap<String, String> rMap) throws Exception;
+	void ocrResultDelete(HashMap<String, String> rMap) throws Exception;
 
 	/**
 	* MongoDB에 저장된 이미지 데이터 가져오기
-	 * @return
+	 * @return save_file_name, save_file_path, original_file_name
 	 */
 	public Map<String, String> getImageInfo(String reg_id, String reg_dt) throws Exception;
+	
 	
 }

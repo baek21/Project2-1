@@ -33,7 +33,7 @@ public class FileUtil {
 	 */
 	public static String mkdirForDate(String path, String userId) {
 		
-		String filePath = path + DateUtil.getDateTime("/yyyy/MM/dd") + "/" + userId; // 폴더 경로
+		String filePath = path +  "/" + userId + DateUtil.getDateTime("/yyyy/MM/dd"); // 폴더 경로
 		
 		File Folder = new File(filePath);
 		

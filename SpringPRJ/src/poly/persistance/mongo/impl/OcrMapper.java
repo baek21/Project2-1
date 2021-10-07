@@ -320,7 +320,7 @@ public class OcrMapper implements IOcrMapper {
 		projection = null;
 
 		log.info(this.getClass().getName() + ".getImageInfo End!");
-
+		
 		return rMap;
 	}
 

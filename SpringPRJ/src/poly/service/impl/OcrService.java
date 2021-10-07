@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Resource;
 
@@ -99,6 +100,23 @@ public class OcrService implements IOcrService {
 		ocrMapper.ocrResultDelete(rMap);
 
 		log.info(this.getClass().getName() + ".ocrResultDelete end!");
+	}
+
+	@Override
+	public Map<String, String> getImageInfo(String reg_id, String reg_dt) throws Exception {
+		
+		log.info(this.getClass().getName() + ".getImageInfo start!");
+		
+		log.info("reg_id : " + reg_id);
+		log.info("reg_dt : " + reg_dt);
+		
+		Map<String, String> rMap = ocrMapper.getImageInfo(reg_id, reg_dt);
+		
+		log.info("사용자 이미지 정보 : " + rMap);
+						
+		log.info(this.getClass().getName() + ".getImageInfo end!");
+		
+		return rMap;
 	}
 
 }
