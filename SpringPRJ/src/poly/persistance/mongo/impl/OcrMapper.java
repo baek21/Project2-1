@@ -278,6 +278,11 @@ public class OcrMapper implements IOcrMapper {
 		
 		MongoCollection<Document> col = mongodb.getCollection(colNm);
 
+		// MongoDB의 OCR결과 컬렉션에서 해당 레코드 찾을 쿼리
+		Document query = new Document();
+
+		query.append("reg_dt", reg_dt);
+		
 		// 조회 결과 중 출력할 컬럼들(SQL의 SELECT절과 FROM절 가운데 컬럼들과 유사함)
 		Document projection = new Document();
 
@@ -293,7 +298,7 @@ public class OcrMapper implements IOcrMapper {
 		// 조회하는 데이터의 양이 적은 경우, find를 사용하고, 데이터양이 많은 경우 무조건 Aggregate 사용한다
 		// 결과 조회는 Find와 Aggregation이 분리되어 Find 쿼리는 FindIterable을 사용해야함
 		// .first() 첫번째 document 불러오는 옵션
-		Document doc = col.find(new Document()).projection(projection).first();
+		Document doc = col.find(query).projection(projection).first();
 	
 		if (doc == null) {
 			doc = new Document();

@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Resource;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -93,47 +94,62 @@ public class OcrController {
 		log.info("웹에서 넘어온 reg_id : " + reg_id);
 		log.info("웹에서 넘어온 reg_dt : " + reg_dt);
 		
-		// MongoDB에서 사용자 이미지 정보 가져오기
-		Map<String, String> rMap = ocrService.getImageInfo(reg_id, reg_dt);
-		
-		// 이미지 파일 경로
-		String imgPath = CmmUtil.nvl((String) rMap.get("save_file_path")) + CmmUtil.nvl((String) rMap.get("save_file_name"));
-		// 이미지 원본 이름
-		String imgNm = CmmUtil.nvl((String) rMap.get("original_file_name"));
 				
 		model.addAttribute("reg_id", reg_id);
 		model.addAttribute("reg_dt", reg_dt);
-		model.addAttribute("imgPath", imgPath);
-		model.addAttribute("imgNm", imgNm);
 
 		log.info(this.getClass().getName() + ".WordMean_List end!");
 
 		return "/ocr/WordMean_List";
 	}
 	
+	/**
+	 * 영어 단어장 이미지 처리 페이지
+	 */
 	@RequestMapping(value = "ocr/WordMean_Img")
-	public void WordMean_Img(HttpSession session,HttpServletRequest request, HttpServletResponse response) throws Exception{
+	public void WordMean_Img(HttpServletRequest request, HttpServletResponse response) throws Exception{
 		
 		log.info(this.getClass().getName() + ".WordMean_Img start!");
 		
-		String imgPath = CmmUtil.nvl((String) session.getAttribute("imgPath"));
+		// 해당 정보 가져오기
+		String reg_id = CmmUtil.nvl((String) request.getParameter("reg_id")); // 등록자
+		String reg_dt = CmmUtil.nvl((String) request.getParameter("reg_dt")); // 등록일
+		
+		// MongoDB에서 사용자 이미지 정보 가져오기
+		Map<String, String> rMap = ocrService.getImageInfo(reg_id, reg_dt);
+		
+		// 이미지 파일 경로
+		String imgPath = CmmUtil.nvl((String) rMap.get("save_file_path")) + "/" + CmmUtil.nvl((String) rMap.get("save_file_name"));
+		// 이미지 원본 이름
+		String imgNm = CmmUtil.nvl((String) rMap.get("original_file_name"));
+		
+		rMap = null;
 		
 		log.info(imgPath);
 		File fi = new File(imgPath);
 		
+		log.info(fi);
+		
 		// 이미지 파일이 존재하면 실행
 		if(fi.exists()) {
+			
+			log.info("이미지 출력 시작");
+			
 			// 이미지를 jsp에 출력하기
-			FileInputStream f = new FileInputStream(imgPath);
-			OutputStream out = response.getOutputStream();
+			OutputStream ops = response.getOutputStream();
+			FileInputStream fin = new FileInputStream(imgPath);
+			
 		    int length;
 		    byte[] buffer = new byte[10];
-		    while((length=f.read(buffer)) != -1){
-		    	out.write(buffer, 0, length);
+		    while((length=fin.read(buffer)) != -1){
+		    	ops.write(buffer, 0, length);
 		    }
+		    
+		    log.info("이미지 출력 끝");
 		}
 		
 		log.info(this.getClass().getName() + ".WordMean_Img end!");
+		
 		
 	}
 
@@ -201,6 +217,8 @@ public class OcrController {
                         // 위에서 생성한 fileOutputStream 객체에 출력하기를 반복한다
                     }
                     // --------------------------
+                    
+                    
 					pDTO = new OcrDTO();
 
 					pDTO.setSave_file_name(saveFileName);
