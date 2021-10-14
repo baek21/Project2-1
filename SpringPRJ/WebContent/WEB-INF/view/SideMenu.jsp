@@ -26,7 +26,10 @@
     
     <!-- Custom styles for this page -->
     <link href="/vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
-
+    
+    <!-- 구글 차트 API -->
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+	
 </head>
 
 <body id="page-top">
@@ -125,6 +128,7 @@
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">영어 단어 추출 기록</h6>
                         <a class="collapse-item" href="/ocr/OcrResult_List.do">영어 단어장 목록</a>
+                        <a class="collapse-item" href="/recent/WordChart.do">영어 단어 빈도수</a>
                         <div class="collapse-divider"></div>
                         <h6 class="collapse-header">회원 관리</h6>
                         <a class="collapse-item" href="/user/UserExam.do">회원정보 관리</a>

@@ -196,8 +196,7 @@ public class OcrController {
 										
 					// 업로드 되는 파일을 서버에 저장
 					String fullFileInfo = saveFilePath + "/" + saveFileName;
-					
-					
+															
 					//mf.transferTo(new File(fullFileInfo));
 					
 					// --------------------------
