@@ -14,12 +14,17 @@
 	//회원가입 정보의 유효성 체크하기
 	function doRegUserCheck(f){
 		
-		if(f.user_id.value.length<4){
-			alert("아이디를 4자리 이상 입력하세요.");
+		var pattern_num = /[0-9]/; // 숫자
+		var pattern_eng = /[a-zA-Z]/; // 영어
+		var pattern_kor = /[가-힣]/; // 한글체크
+		var pattern_spc = /[!?@#$%^&*():;+-=~{}<>\_\[\]\|\\\"\'\,\.\/\`\₩]/
+
+		if(f.user_id.value.length < 4 || pattern_spc.test(f.user_id.value)){
+			alert("아이디를 4자리 이상 입력하세요.\n특수문자는 입력이 불가능합니다.");
 			f.user_id.focus();
 			return false;
 		}
-		if(f.user_name.value==""){
+    	if(f.user_name.value==""){
 			alert("이름를 입력하세요.");
 			f.user_name.focus();
 			return false;
@@ -54,7 +59,7 @@
 		basicCard +=	'</div>';
 		basicCard +=	'<form name="f" method="post" class="user" action="/user/insertUserInfo.do" onsubmit="return doRegUserCheck(this);">';
 		basicCard +=		'<div class="form-group">';
-		basicCard +=			'<input type="text" name = "user_id" class="form-control form-control-user" id="userId" placeholder="아이디 입력 ( 4자리 이상 )" required autofocus>';
+		basicCard +=			'<input type="text" name = "user_id" class="form-control form-control-user" id="userId" placeholder="아이디 입력 ( 한글, 영문, 숫자 / 4자리 이상  )" required autofocus>';
 		basicCard +=		'</div>';
 		basicCard +=		'<div class="form-group">';
 		basicCard +=			'<input type="text" name = "user_name" class="form-control form-control-user" id="userName" placeholder="이름 입력" required>';

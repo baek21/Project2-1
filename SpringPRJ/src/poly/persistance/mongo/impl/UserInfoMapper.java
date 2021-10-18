@@ -438,5 +438,94 @@ public class UserInfoMapper implements IUserInfoMapper {
 		log.info(this.getClass().getName() + ".deleteUser End!");
 		return res;
 	}
+	// 회원 가입
+		@Override
+		public int insertSnsUserInfo(Map<String, String> rMap) throws Exception {
+
+			log.info(this.getClass().getName() + ".insertUserInfo Start!");
+
+			// 등록 결과
+			int res;
+
+			// 서비스에서 값이 정상적으로 못 넘어오는 경우를 대비하기 위해 사용함
+			if (rMap == null) {
+				rMap = new HashMap<>();
+			}
+
+			// 저장할 컬렉션명
+			String colNm = USER_INFO_COLLECTION + "_sns";
+			
+			log.info("회원정보 등록할 컬렉션 이름 : " + colNm);
+
+			// 기존에 등록된 컬렉션 이름이 존재하는지 체크하고, 컬렉션이 없는 경우 생성함
+			if (!mongodb.collectionExists(colNm)) {
+
+				mongodb.createCollection(colNm);
+				
+				// 인덱스 생성
+				mongodb.getCollection(colNm).createIndex(Indexes.ascending("id"));
+				// 인덱스 생성(유니크)
+				IndexOptions indexOptions = new IndexOptions().unique(true);
+				mongodb.getCollection(colNm).createIndex(
+						Indexes.compoundIndex(Indexes.ascending("id"), Indexes.ascending("name"))
+						, indexOptions);
+			}
+
+			// 저장할 컬렉션 객체 생성
+			MongoCollection<Document> col = mongodb.getCollection(colNm);
+
+			// 중복 아이디 확인할 쿼리
+			Document query = new Document();
+
+			query.append("id", CmmUtil.nvl(rMap.get("id")));
+			query.append("name", CmmUtil.nvl(rMap.get("name")));
+
+			// MongoDB에 등록된 아이디 없으면 실행
+			// .first()를 쓰면 첫번째 Document 가져옴(형태 Document)
+			if (col.find(query).first() == null) {
+
+				// 등록할 나머지 회원 정보
+				String id = CmmUtil.nvl(rMap.get("id"));
+				String email = CmmUtil.nvl(rMap.get("email"));
+				String name = CmmUtil.nvl(rMap.get("name"));  
+				String sns_type = CmmUtil.nvl(rMap.get("sns_type"));
+				String reg_dt = CmmUtil.nvl(rMap.get("reg_dt"));
+				String chg_dt = CmmUtil.nvl(rMap.get("chg_dt"));
+
+				Document insertDoc = new Document();
+
+				insertDoc.append("id", id);
+				insertDoc.append("email", email);
+				insertDoc.append("name", name);
+				insertDoc.append("sns_type", sns_type);
+				insertDoc.append("reg_dt", reg_dt);
+				insertDoc.append("chg_dt", chg_dt);
+
+				col.insertOne(insertDoc);
+
+				insertDoc = null;
+
+				// MongoDB에 등록 성공
+				res = 0;
+
+				log.info("회원정보 등록 완료");
+
+			} else {
+
+				// MongoDB에 등록 실패 - 아이디 중복
+				res = 1;
+
+				log.info("회원정보 중복");
+			}
+
+			// 메모리에서 강제로 비우기
+			rMap = null;
+			col = null;
+			query = null;
+
+			log.info(this.getClass().getName() + ".insertUserInfo End!");
+
+			return res;
+		}
 
 }

@@ -1,5 +1,6 @@
 package poly.service.impl;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.annotation.Resource;
@@ -24,7 +25,7 @@ public class UserInfoService implements IUserInfoService {
 	@Override
 	public int insertUserInfo(UserInfoDTO pDTO) throws Exception {
 
-		log.info(this.getClass().getName() + ".regUserInfo start!");
+		log.info(this.getClass().getName() + ".insertUserInfo start!");
 
 		// controller에서 값이 정상적으로 못 넘어오는 경우를 대비하기 위해 사용함
 		if (pDTO == null) {
@@ -36,7 +37,7 @@ public class UserInfoService implements IUserInfoService {
 		pDTO = null;
 
 		// 로그
-		log.info(this.getClass().getName() + ".regUserInfo end!");
+		log.info(this.getClass().getName() + ".insertUserInfo end!");
 
 		return res;
 
@@ -118,5 +119,28 @@ public class UserInfoService implements IUserInfoService {
 		log.info(this.getClass().getName() + ".deleteUser end!");
 		return res;
 	}
+	
+	// 회원가입
+		@Override
+		public int insertSnsUserInfo(Map<String, String> rMap) throws Exception {
+
+			log.info(this.getClass().getName() + ".insertSnsUserInfo start!");
+
+			// controller에서 값이 정상적으로 못 넘어오는 경우를 대비하기 위해 사용함
+			if (rMap == null) {
+				rMap = new HashMap<>();
+			}
+
+			int res = userInfoMapper.insertSnsUserInfo(rMap);
+			
+			// 메모리 정리
+			rMap = null;
+
+			// 로그
+			log.info(this.getClass().getName() + ".insertSnsUserInfo end!");
+
+			return res;
+
+		}
 
 }

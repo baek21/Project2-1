@@ -1,5 +1,16 @@
 package poly.controller;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.annotation.Resource;
@@ -8,6 +19,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.log4j.Logger;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -65,12 +78,12 @@ public class UserInfoController {
 		UserInfoDTO pDTO = null;
 
 		try {
-			
+
 			String user_id = CmmUtil.nvl(request.getParameter("user_id")); // 아이디
 			String user_name = CmmUtil.nvl(request.getParameter("user_name")); // 이름
 			String password = CmmUtil.nvl(request.getParameter("password")); // 비밀번호
 			String email = CmmUtil.nvl(request.getParameter("email").toString()); // 이메일
-			
+
 			log.info("user_id : " + user_id);
 			log.info("user_name : " + user_name);
 			log.info("password : " + password);
@@ -84,7 +97,7 @@ public class UserInfoController {
 
 			// 비밀번호는 절대로 복호화되지 않도록 해시 알고리즘으로 암호화함
 			pDTO.setPassword(EncryptUtil.encHashSHA256(password));
-			
+
 			// 민감 정보인 이메일은 AES128-CBC로 암호화함
 			pDTO.setEmail(EncryptUtil.encAES128CBC(email));
 
@@ -93,46 +106,45 @@ public class UserInfoController {
 			pDTO.setChg_id("Admin");
 			pDTO.setChg_dt(DateUtil.getDateTime("yyyyMMddhhmmss"));
 
-			
-			 // 회원가입 결과
+			// 회원가입 결과
 			res = userInfoService.insertUserInfo(pDTO);
-			
+
 			// 이메일 발송
-			if(!"".equals(email)) {
-				
+			if (!"".equals(email)) {
+
 				log.info("메시지 보낼 이메일 : " + email);
-				
+
 				MailDTO eDTO = new MailDTO();
-				
+
 				String toMail = email;
 				String title = "Eword 회원가입을 환영합니다.";
 				String content = user_id + "님 회원가입을 환영합니다. 본인이 아니시라면 관리자에게 문의 하시기 바랍니다.\n"
 						+ "Eword http://13.124.9.63:8080/main.do\n";
-				
+
 				eDTO.setToMail(toMail);
 				eDTO.setTitle(title);
 				eDTO.setContents(content);
-				
+
 				// 결과(0 실패, 1 성공)
 				int sendRes = mailService.doSendMail(eDTO);
-				
+
 				log.info("메일 전송 결과 : " + sendRes);
-				
+
 				eDTO = null;
-				
+
 			}
 
 		} catch (Exception e) {
-			
+
 			// 시스템 에러
 			res = 2;
-						
+
 			log.info(e.toString());
-						
+
 			e.printStackTrace();
 
 		} finally {
-			
+
 			log.info(this.getClass().getName() + ".insertUserInfo end!");
 
 			// 회원가입 여부 결과 메시지 전달하기
@@ -165,7 +177,8 @@ public class UserInfoController {
 			ModelMap model) throws Exception {
 		log.info(this.getClass().getName() + ".getUserLoginCheck start!");
 
-		// 로그인 처리 결과를 저장할 변수(로그인 성공 : 0, 아이디, 비밀번호 불일치로 인한 실패 : 1, 가입되지 않음 : 2, 시스템 에러: 3)
+		// 로그인 처리 결과를 저장할 변수(로그인 성공 : 0, 아이디, 비밀번호 불일치로 인한 실패 : 1, 가입되지 않음 : 2, 시스템 에러:
+		// 3)
 		int res = 999;
 
 		// 웹(회원정보 입력화면)에서 받는 정보를 저장할 변수
@@ -175,9 +188,9 @@ public class UserInfoController {
 
 			String user_id = CmmUtil.nvl(request.getParameter("user_id")); // 아이디
 			String password = CmmUtil.nvl(request.getParameter("password")); // 비밀번호
-			
+
 			log.info("user_id : " + user_id);
-			//log.info("password : " + password);
+			// log.info("password : " + password);
 
 			// 웹(회원정보 입력화면)에서 받는 정보를 저장할 변수를 메모리에 올리기
 			pDTO = new UserInfoDTO();
@@ -191,20 +204,21 @@ public class UserInfoController {
 			res = userInfoService.getUserLoginCheck(pDTO);
 
 			if (res == 0) { // 로그인 성공
-				
+
 				session.setAttribute("SS_USER_ID", user_id);
+				session.setAttribute("BLIND_ID", user_id.substring(0, 4) + "****");
 			}
 		} catch (Exception e) {
-			
+
 			// 시스템 에러
 			res = 3;
-			
+
 			log.info(e.toString());
-			
+
 			e.printStackTrace();
-			
+
 		} finally {
-			
+
 			log.info(this.getClass().getName() + ".getUserLoginCheck end!");
 
 			/*
@@ -225,12 +239,13 @@ public class UserInfoController {
 	@RequestMapping(value = "user/Logout")
 	public String logout(HttpSession session) {
 		log.info(this.getClass().getName() + ".logout ok!!");
-		
+
 		session.removeAttribute("SS_USER_ID");
+		session.removeAttribute("BLIND_ID");
 
 		return "/user/Logout";
 	}
-	
+
 	// 회원정보 가져오기
 	@RequestMapping(value = "user/getUserInfo", method = RequestMethod.POST)
 	public String getUserInfo(HttpSession session, HttpServletRequest request, HttpServletResponse response,
@@ -254,11 +269,11 @@ public class UserInfoController {
 
 		// 확인 결과 가져오기
 		Map<String, String> rMap = userInfoService.getUserInfo(pDTO);
-		
+
 		model.addAttribute("rMap", rMap);
-		
+
 		log.info(rMap);
-		
+
 		// 메모리 정리
 		pDTO = null;
 		rMap = null;
@@ -267,7 +282,7 @@ public class UserInfoController {
 
 		return "/user/UserInfoUpdate";
 	}
-	
+
 	// 회원 본인 확인
 	@RequestMapping(value = "user/UserExam")
 	public String userExam() {
@@ -275,13 +290,13 @@ public class UserInfoController {
 
 		return "/user/UserExam";
 	}
-	
+
 	/**
 	 * 회원정보 업데이트
 	 */
 	@RequestMapping(value = "user/UserUpdate", method = RequestMethod.POST)
-	public String userUpdate(HttpSession session, HttpServletRequest request, HttpServletResponse response, ModelMap model)
-			throws Exception {
+	public String userUpdate(HttpSession session, HttpServletRequest request, HttpServletResponse response,
+			ModelMap model) throws Exception {
 
 		log.info(this.getClass().getName() + ".userUpdate start...");
 
@@ -293,15 +308,15 @@ public class UserInfoController {
 		UserInfoDTO pDTO = null;
 
 		try {
-			
+
 			String user_id = CmmUtil.nvl(request.getParameter("user_id")); // 아이디
 			String user_name = CmmUtil.nvl(request.getParameter("user_name")); // 이름
 			String password = CmmUtil.nvl(request.getParameter("password")); // 비밀번호
 			String email = CmmUtil.nvl(request.getParameter("email").toString()); // 이메일
-			
+
 			log.info("user_id : " + user_id);
 			log.info("user_name : " + user_name);
-			//log.info("password : " + password);
+			// log.info("password : " + password);
 			log.info("email : " + email);
 
 			// 웹(회원정보 입력화면)에서 받는 정보를 저장할 변수를 메모리에 올리기
@@ -309,16 +324,16 @@ public class UserInfoController {
 
 			pDTO.setUser_id(user_id);
 			pDTO.setUser_name(user_name);
-			
+
 			// 변경할 비밀번호가 있으면
-			if(!"".equals(password)) {
+			if (!"".equals(password)) {
 				// 비밀번호는 절대로 복호화되지 않도록 해시 알고리즘으로 암호화함
 				pDTO.setPassword(EncryptUtil.encHashSHA256(password));
 			}
-			
+
 			// 민감 정보인 이메일은 AES128-CBC로 암호화함
 			pDTO.setEmail(EncryptUtil.encAES128CBC(email));
-			
+
 			pDTO.setChg_id(user_id);
 			pDTO.setChg_dt(DateUtil.getDateTime("yyyyMMddhhmmss"));
 
@@ -326,44 +341,44 @@ public class UserInfoController {
 			 * 업데이트 결과(0 실패, 1 성공)
 			 */
 			res = userInfoService.userUpdate(pDTO);
-			
+
 			// 이메일 발송
-			if(!"".equals(email)) {
-				
+			if (!"".equals(email)) {
+
 				log.info("메시지 보낼 이메일 : " + email);
-				
+
 				MailDTO eDTO = new MailDTO();
-				
+
 				String toMail = email;
 				String title = "Eword 회원정보가 수정 되었습니다.";
 				String content = user_id + "님 회원정보가 수정 되었습니다. 본인이 아니시라면 관리자에게 문의 하시기 바랍니다.\n"
 						+ "Eword http://13.124.9.63:8080/main.do\n";
-				
+
 				eDTO.setToMail(toMail);
 				eDTO.setTitle(title);
 				eDTO.setContents(content);
 
 				int sendRes = mailService.doSendMail(eDTO);
-				
+
 				log.info("메일 전송 결과 : " + sendRes);
-				
+
 				eDTO = null;
-				
+
 			}
-			
+
 		} catch (Exception e) {
-			
+
 			// 예외발생
 			res = e.toString();
-						
+
 			log.info(e.toString());
-						
+
 			e.printStackTrace();
 
 		} finally {
-			
+
 			model.addAttribute("res", res);
-			
+
 			log.info(this.getClass().getName() + ".userUpdate end!");
 
 			// 변수 초기화(메모리 효율화 시키기 위해 초기화)
@@ -374,76 +389,411 @@ public class UserInfoController {
 		return "/user/MsgUpdateResult";
 
 	}
-	
+
 	/**
 	 * 회원 탈퇴
 	 */
 	@RequestMapping(value = "user/deleteUser")
-	public String deleteUser(HttpSession session, HttpServletRequest request, HttpServletResponse response, ModelMap model)
-			throws Exception {
-		
+	public String deleteUser(HttpSession session, HttpServletRequest request, HttpServletResponse response,
+			ModelMap model) throws Exception {
+
 		log.info(this.getClass().getName() + ".deleteUser start...");
-		
+
 		// 탈퇴 결과(2 성공, 3 실패)
 		String res = "3";
-				
+
 		try {
-			
+
 			String user_id = CmmUtil.nvl(request.getParameter("user_id")); // 아이디
 			String email = CmmUtil.nvl(request.getParameter("user_email")); // 이메일
-						
+
 			log.info("user_id : " + user_id);
-			
+
 			res = userInfoService.deleteUser(user_id);
-			
+
 			log.info("회원 탈퇴 결과 : " + res);
-			
+
 			// 이메일 발송
-			if(!"".equals(email)) {
-				
+			if (!"".equals(email)) {
+
 				log.info("메시지 보낼 이메일 : " + email);
-				
+
 				MailDTO eDTO = new MailDTO();
-				
+
 				String toMail = email;
 				String title = "Eword 회원탈퇴 처리 되었습니다.";
 				String content = user_id + "님 회원탈퇴 처리 되었습니다. 그동안 이용해 주셔서 감사합니다.\n"
 						+ "Eword http://13.124.9.63:8080/main.do\n";
-				
+
 				eDTO.setToMail(toMail);
 				eDTO.setTitle(title);
 				eDTO.setContents(content);
 
 				int sendRes = mailService.doSendMail(eDTO);
-				
+
 				log.info("메일 전송 결과 : " + sendRes);
-				
+
 				eDTO = null;
-				
+
 			}
-			
+
 		} catch (Exception e) {
-			
+
 			// 예외 발생
 			res = e.toString();
-			
+
 			e.printStackTrace();
-			
+
 			log.info(e.toString());
-			
+
 		} finally {
-			
+
 			session.removeAttribute("SS_USER_ID");
+			session.removeAttribute("BLIND_ID");
 			model.addAttribute("res", res);
-			
+
 			log.info(this.getClass().getName() + ".deleteUser end!");
-			
+
 		}
-		
+
 		return "/user/MsgUpdateResult";
-		
+
 	}
-	
-	
+
+	// 네이버 아이디로 로그인
+	@RequestMapping(value = "user/NaverLogin")
+	public String naverLogin() {
+		log.info(this.getClass().getName() + ".user/NaverLogin ok");
+
+		return "/user/NaverLogin";
+	}
+
+	// 네이버 아이디로 로그인(access_token 받기)
+	@RequestMapping(value = "user/NaverCallback")
+	public String naverCallback(HttpSession session, HttpServletRequest request, HttpServletResponse response,
+			ModelMap model) throws Exception {
+		log.info(this.getClass().getName() + ".user/naverCallback start");
+
+		String clientId = "Zr9qkKrxbEI0orbLK8fF";// 애플리케이션 클라이언트 아이디값";
+		String clientSecret = "AZKCuLBjcT";// 애플리케이션 클라이언트 시크릿값";
+		String code = request.getParameter("code");
+		String state = request.getParameter("state");
+		String redirectURI = URLEncoder.encode("http://localhost:8090/user/NaverCallback.do", "UTF-8");
+		String apiURL;
+		apiURL = "https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&";
+		apiURL += "client_id=" + clientId;
+		apiURL += "&client_secret=" + clientSecret;
+		apiURL += "&redirect_uri=" + redirectURI;
+		apiURL += "&code=" + code;
+		apiURL += "&state=" + state;
+		String access_token = "";
+		String refresh_token = "";
+
+		log.info("apiURL=" + apiURL);
+
+		try {
+			URL url = new URL(apiURL);
+			HttpURLConnection con = (HttpURLConnection) url.openConnection();
+			con.setRequestMethod("GET");
+			int responseCode = con.getResponseCode();
+			BufferedReader br;
+			log.info("responseCode=" + responseCode);
+			if (responseCode == 200) { // 정상 호출
+				br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+			} else { // 에러 발생
+				br = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+			}
+			String inputLine;
+			StringBuffer res = new StringBuffer();
+			while ((inputLine = br.readLine()) != null) {
+				res.append(inputLine);
+			}
+			br.close();
+			if (responseCode == 200) {
+
+				// res 파싱
+				JSONParser parser = new JSONParser();
+				Object obj = parser.parse(res.toString());
+				JSONObject jsonObj = (JSONObject) obj;
+
+				// token 값
+				access_token += (String) jsonObj.get("access_token");
+				refresh_token += (String) jsonObj.get("refresh_token");
+				log.info("access_token 값 : " + access_token);
+				log.info("refresh_token 값 : " + refresh_token);
+
+				// 프로필 값
+				String profileRes = profile(access_token);
+				log.info("profileRes 값 : " + profileRes);
+				jsonObj = (JSONObject) parser.parse(profileRes);
+
+				// https://developers.naver.com/docs/login/profile/profile.md 참고
+
+				Map<String, String> rMap = (HashMap<String, String>) jsonObj.get("response");
+
+				String id = rMap.get("id");
+				String email = rMap.get("email");
+				String name = rMap.get("name");
+
+				rMap.put("email", EncryptUtil.encAES128CBC(rMap.get("email")));
+				rMap.put("sns_type", "naver");
+				rMap.put("reg_dt", DateUtil.getDateTime("yyyyMMddhhmmss"));
+				rMap.put("chg_dt", DateUtil.getDateTime("yyyyMMddhhmmss"));
+
+				log.info(rMap.get("id"));
+				log.info(rMap.get("email"));
+				log.info(rMap.get("name"));
+				log.info(rMap.get("sns_type"));
+				log.info(rMap.get("reg_dt"));
+				log.info(rMap.get("chg_dt"));
+
+				// 회원가입 결과
+				// 0 성공, 1 중복 아이디(본인확인), 2 시스템 에러
+				int result = userInfoService.insertSnsUserInfo(rMap);
+
+				if (!"".equals(email) && result == 0) {// 이메일 발송
+
+					log.info("메시지 보낼 이메일 : " + email);
+
+					MailDTO eDTO = new MailDTO();
+
+					String toMail = email;
+					String title = "Eword 회원가입을 환영합니다.";
+					String content = name + "님 회원가입을 환영합니다. 본인이 아니시라면 관리자에게 문의 하시기 바랍니다.\n"
+							+ "Eword http://13.124.9.63:8080/main.do\n";
+
+					eDTO.setToMail(toMail);
+					eDTO.setTitle(title);
+					eDTO.setContents(content);
+
+					// 결과(0 실패, 1 성공)
+					int sendRes = mailService.doSendMail(eDTO);
+
+					log.info("메일 전송 결과 : " + sendRes);
+
+					eDTO = null;
+
+					session.setAttribute("SS_USER_ID", rMap.get("id"));
+
+				}
+				if (result != 2) {
+
+					log.info("회원정보 확인 후 세션 적용");
+					session.setAttribute("SS_USER_ID", rMap.get("id"));
+					session.setAttribute("BLIND_ID", rMap.get("id").substring(0, 4) + "****");
+				}
+				model.addAttribute("res", String.valueOf(result));
+				rMap = null;
+			}
+		} catch (Exception e) {
+			log.info("오류 코드 : " + e);
+		} finally {
+			log.info(this.getClass().getName() + ".user/naverCallback end");
+		}
+
+		return "/user/NaverCallback";
+	}
+
+	// ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ 네이버 회원 프로필 조회 함수들 ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓
+	public static String profile(String accessToken) {
+
+		// accessToken(네이버 로그인 접근 토큰);
+		String header = "Bearer " + accessToken; // Bearer 다음에 공백 추가
+
+		String apiURL = "https://openapi.naver.com/v1/nid/me";
+
+		Map<String, String> requestHeaders = new HashMap<>();
+		requestHeaders.put("Authorization", header);
+		String responseBody = get(apiURL, requestHeaders);
+
+		// System.out.println(responseBody);
+
+		return responseBody;
+	}
+
+	private static String get(String apiUrl, Map<String, String> requestHeaders) {
+		HttpURLConnection con = connect(apiUrl);
+		try {
+			con.setRequestMethod("GET");
+			for (Map.Entry<String, String> header : requestHeaders.entrySet()) {
+				con.setRequestProperty(header.getKey(), header.getValue());
+			}
+
+			int responseCode = con.getResponseCode();
+			if (responseCode == HttpURLConnection.HTTP_OK) { // 정상 호출
+				return readBody(con.getInputStream());
+			} else { // 에러 발생
+				return readBody(con.getErrorStream());
+			}
+		} catch (IOException e) {
+			throw new RuntimeException("API 요청과 응답 실패", e);
+		} finally {
+			con.disconnect();
+		}
+	}
+
+	private static HttpURLConnection connect(String apiUrl) {
+		try {
+			URL url = new URL(apiUrl);
+			return (HttpURLConnection) url.openConnection();
+		} catch (MalformedURLException e) {
+			throw new RuntimeException("API URL이 잘못되었습니다. : " + apiUrl, e);
+		} catch (IOException e) {
+			throw new RuntimeException("연결이 실패했습니다. : " + apiUrl, e);
+		}
+	}
+
+	private static String readBody(InputStream body) {
+		InputStreamReader streamReader = new InputStreamReader(body);
+
+		try (BufferedReader lineReader = new BufferedReader(streamReader)) {
+			StringBuilder responseBody = new StringBuilder();
+
+			String line;
+			while ((line = lineReader.readLine()) != null) {
+				responseBody.append(line);
+			}
+
+			return responseBody.toString();
+		} catch (IOException e) {
+			throw new RuntimeException("API 응답을 읽는데 실패했습니다.", e);
+		}
+	}
+	// ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ 네이버 회원 프로필 조회 함수들 ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑
+
+	// 카카오로 로그인
+	@RequestMapping(value = "user/KakaoLogin")
+	public String kakaoLogin(HttpSession session, HttpServletRequest request, HttpServletResponse response,
+			ModelMap model) throws Exception {
+		log.info(this.getClass().getName() + ".kakaoLogin start");
+
+		log.info(this.getClass().getName() + ".kakaoLogin end");
+
+		return "/user/KakaoLogin";
+	}
+
+	// 카카오로 로그인(access_token 받기)
+	@RequestMapping(value = "user/KakaoCallback")
+	public String kakaoCallback(HttpSession session, HttpServletRequest request, HttpServletResponse response,
+			ModelMap model) throws Exception {
+		log.info(this.getClass().getName() + ".kakaoCallback start");
+
+		String code = request.getParameter("code");
+		String state = request.getParameter("state");
+		log.info("code : " + code);
+//	String client_id = "110a9e0b91af88905005827ac500c075";// 앱 REST API 키;
+//	String redirect_uri = URLEncoder.encode("http://localhost:8090/user/KakaoCallback.do", "UTF-8");
+//	String response_type = "code";
+//	String apiURL;
+//	apiURL = "http://kauth.kakao.com/oauth/authorize?";
+//	apiURL += "client_id=" + client_id;
+//	apiURL += "&redirect_uri=" + redirect_uri;
+//	apiURL += "&response_type=" + response_type;
+//	log.info("apiURL=" + apiURL);
+//
+//	try {
+//		URL url = new URL(apiURL);
+//		HttpURLConnection con = (HttpURLConnection) url.openConnection();
+//		con.setRequestMethod("GET");
+//		int responseCode = con.getResponseCode();
+//		BufferedReader br;
+//		log.info("responseCode=" + responseCode);
+//		if (responseCode == 200) { // 정상 호출
+//			br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+//		} else { // 에러 발생
+//			br = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+//		}
+//		String inputLine;
+//		StringBuffer res = new StringBuffer();
+//		while ((inputLine = br.readLine()) != null) {
+//			res.append(inputLine);
+//		}
+//		br.close();
+//		if (responseCode == 200) {
+//
+//			// res 파싱
+//			JSONParser parser = new JSONParser();
+//			Object obj = parser.parse(res.toString());
+//			JSONObject jsonObj = (JSONObject) obj;
+//
+//			log.info(jsonObj);
+//			
+//					// token 값
+//					access_token += (String) jsonObj.get("access_token");
+//					refresh_token += (String) jsonObj.get("refresh_token");
+//					log.info("access_token 값 : " + access_token);
+//					log.info("refresh_token 값 : " + refresh_token);
+//
+//					// 프로필 값
+//					String profileRes = profile(access_token);
+//					log.info("profileRes 값 : " + profileRes);
+//					jsonObj = (JSONObject) parser.parse(profileRes);
+//
+//					// https://developers.naver.com/docs/login/profile/profile.md 참고
+//
+//					Map<String, String> rMap = (HashMap<String, String>) jsonObj.get("response");
+//
+//					String id = rMap.get("id");
+//					String email = rMap.get("email");
+//					String name = rMap.get("name");
+//
+//					rMap.put("email", EncryptUtil.encAES128CBC(rMap.get("email")));
+//					rMap.put("sns_type", "naver");
+//					rMap.put("reg_dt", DateUtil.getDateTime("yyyyMMddhhmmss"));
+//					rMap.put("chg_dt", DateUtil.getDateTime("yyyyMMddhhmmss"));
+//
+//					log.info(rMap.get("id"));
+//					log.info(rMap.get("email"));
+//					log.info(rMap.get("name"));
+//					log.info(rMap.get("sns_type"));
+//					log.info(rMap.get("reg_dt"));
+//					log.info(rMap.get("chg_dt"));
+//
+//					// 회원가입 결과
+//					// 0 성공, 1 중복 아이디(본인확인), 2 시스템 에러
+//					int result = userInfoService.insertSnsUserInfo(rMap);
+//
+//					if (!"".equals(email) && result == 0) {// 이메일 발송
+//
+//						log.info("메시지 보낼 이메일 : " + email);
+//
+//						MailDTO eDTO = new MailDTO();
+//
+//						String toMail = email;
+//						String title = "Eword 회원가입을 환영합니다.";
+//						String content = name + "님 회원가입을 환영합니다. 본인이 아니시라면 관리자에게 문의 하시기 바랍니다.\n"
+//								+ "Eword http://13.124.9.63:8080/main.do\n";
+//
+//						eDTO.setToMail(toMail);
+//						eDTO.setTitle(title);
+//						eDTO.setContents(content);
+//
+//						// 결과(0 실패, 1 성공)
+//						int sendRes = mailService.doSendMail(eDTO);
+//
+//						log.info("메일 전송 결과 : " + sendRes);
+//
+//						eDTO = null;
+//						
+//						session.setAttribute("SS_USER_ID", rMap.get("id"));
+//
+//					}
+//					if(result != 2) {
+//						
+//						log.info("회원정보 확인 후 세션 적용");
+//						session.setAttribute("SS_USER_ID", rMap.get("id"));
+//						session.setAttribute("BLIND_ID", rMap.get("id").substring(0, 4)+"****");
+//					}
+//					model.addAttribute("res", String.valueOf(result));
+//					rMap = null;
+//			}
+//		} catch (Exception e) {
+//			log.info("오류 코드 : " + e);
+//		} finally {
+//			log.info(this.getClass().getName() + ".kakaoCallback end");
+//		}
+//		
+		return "/user/KakaoCallback";
+	}
 
 }

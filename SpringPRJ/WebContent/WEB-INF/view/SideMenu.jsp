@@ -4,6 +4,7 @@
 <%
 	//session.setAttribute("SS_USER_ID", "guest1");// 세션 강제 적용
 	String SS_USER_ID = CmmUtil.nvl((String)session.getAttribute("SS_USER_ID"));
+	String BLIND_ID = CmmUtil.nvl((String)session.getAttribute("BLIND_ID"));
 %>
 <!DOCTYPE html>
 <html>
@@ -92,8 +93,8 @@
             </div>
                         
             <!-- 로그인 상태에 따라 보여주는 메뉴 -->
-            <script>var SS_USER_ID = "<%=SS_USER_ID%>";</script>
-			<%if(""==SS_USER_ID) {%>
+            <script>var SS_USER_ID = "<%=BLIND_ID%>";</script>
+			<%if(""==BLIND_ID) {%>
 		
 			<!-- 미로그인 상태 -->
             <!-- Nav Item - Pages Collapse Menu -->
@@ -122,7 +123,7 @@
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePages"
                     aria-expanded="true" aria-controls="collapsePages">
                     <i class="fas fa-user fa-fw"></i>
-                    <span><%=SS_USER_ID%></span>
+                    <span><%=BLIND_ID%></span>
                 </a>
                 <div id="collapsePages" class="collapse" aria-labelledby="headingPages" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">

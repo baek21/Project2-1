@@ -56,8 +56,8 @@ public class RecentWordController {
 	 * 추출 기록 리스트(Ocr결과 목록) 보여주는 페이지
 	 */
 	@RequestMapping(value = "recent/WordChart")
-	public String OcrResult_List() {
-		log.info(this.getClass().getName() + ".WordChart!");
+	public String wordChart() {
+		log.info(this.getClass().getName() + ".wordChart!");
 
 		return "/recent/WordChart";
 	}

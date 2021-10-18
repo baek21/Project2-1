@@ -38,6 +38,14 @@ public interface IUserInfoMapper {
 	 * 회원 탈퇴
 	 */
 	String deleteUser(String user_id) throws Exception;
+
+	/**
+	 * SNS회원가입(MongoDB에 회원 데이터 등록)
+	 * @param rMap 저장될 정보
+	 * @return res = 0(데이터 등록 실패 - 아이디 중복)
+	 * @return res = 1(데이터 등록 성공)
+	 */
+	int insertSnsUserInfo(Map<String, String> rMap) throws Exception;
 	
 	
 }

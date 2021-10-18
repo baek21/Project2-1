@@ -63,7 +63,7 @@ public class OcrController {
 	 * 이미지 인식을 위한 파일업로드 화면 호출
 	 */
 	@RequestMapping(value = "ocr/Image_Upload")
-	public String Image_Upload() {
+	public String image_Upload() {
 		log.info(this.getClass().getName() + ".Image_Upload!");
 
 		return "/ocr/Image_Upload";
@@ -73,7 +73,7 @@ public class OcrController {
 	 * 추출 기록 리스트(Ocr결과 목록) 보여주는 페이지
 	 */
 	@RequestMapping(value = "ocr/OcrResult_List")
-	public String OcrResult_List() {
+	public String ocrResult_List() {
 		log.info(this.getClass().getName() + ".OcrResult_List!");
 
 		return "/ocr/OcrResult_List";
@@ -83,7 +83,7 @@ public class OcrController {
 	 * 영어 단어장 목록 보여주는 페이지
 	 */
 	@RequestMapping(value = "ocr/WordMean_List")
-	public String WordMean_List(HttpServletRequest request, HttpServletResponse response, ModelMap model)
+	public String wordMean_List(HttpServletRequest request, HttpServletResponse response, ModelMap model)
 			throws Exception {
 
 		log.info(this.getClass().getName() + ".WordMean_List start!");
@@ -107,7 +107,7 @@ public class OcrController {
 	 * 영어 단어장 이미지 처리 페이지
 	 */
 	@RequestMapping(value = "ocr/WordMean_Img")
-	public void WordMean_Img(HttpServletRequest request, HttpServletResponse response) throws Exception{
+	public void wordMean_Img(HttpServletRequest request, HttpServletResponse response) throws Exception{
 		
 		log.info(this.getClass().getName() + ".WordMean_Img start!");
 		
@@ -158,7 +158,7 @@ public class OcrController {
 	 * RequestMethod는 웹에서의 방식과 컨트롤러 방식이 일치해야 오류가 안난다.
 	 */
 	@RequestMapping(value = "ocr/ReadTextFromImage", method = RequestMethod.POST)
-	public String ReadTextFromImage(HttpSession session, HttpServletRequest request, HttpServletResponse response,
+	public String readTextFromImage(HttpSession session, HttpServletRequest request, HttpServletResponse response,
 			ModelMap model, @RequestParam(value = "fileUpload") MultipartFile mf) throws Exception {
 
 		log.info(this.getClass().getName() + ".ReadTextFromImage start!");

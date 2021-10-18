@@ -40,7 +40,7 @@ public class NewsController {
 	 */
 	@RequestMapping(value = "news/InsertNewsInfo")
 	@ResponseBody
-	public String InsertNewsInfo(HttpServletRequest request, HttpServletResponse response) throws Exception {
+	public String insertNewsInfo(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
 		log.info(this.getClass().getName() + ".InsertNewsInfo start!");
 
