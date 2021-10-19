@@ -7,10 +7,10 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Resource;
@@ -163,9 +163,9 @@ public class UserInfoController {
 	 * 로그인을 위한 입력 화면으로 이동
 	 */
 	@RequestMapping(value = "user/LoginForm")
-	public String loginForm() {
+	public String loginForm(HttpSession session) {
 		log.info(this.getClass().getName() + ".user/loginForm ok!");
-
+		
 		return "/user/LoginForm";
 	}
 
@@ -468,11 +468,11 @@ public class UserInfoController {
 		return "/user/NaverLogin";
 	}
 
-	// 네이버 아이디로 로그인(access_token 받기)
+	// 네이버 아이디로 로그인 결과
 	@RequestMapping(value = "user/NaverCallback")
 	public String naverCallback(HttpSession session, HttpServletRequest request, HttpServletResponse response,
 			ModelMap model) throws Exception {
-		log.info(this.getClass().getName() + ".user/naverCallback start");
+		log.info(this.getClass().getName() + ".naverCallback start");
 
 		String clientId = "Zr9qkKrxbEI0orbLK8fF";// 애플리케이션 클라이언트 아이디값";
 		String clientSecret = "AZKCuLBjcT";// 애플리케이션 클라이언트 시크릿값";
@@ -523,30 +523,42 @@ public class UserInfoController {
 				log.info("refresh_token 값 : " + refresh_token);
 
 				// 프로필 값
-				String profileRes = profile(access_token);
-				log.info("profileRes 값 : " + profileRes);
-				jsonObj = (JSONObject) parser.parse(profileRes);
-
 				// https://developers.naver.com/docs/login/profile/profile.md 참고
+				// 이메일 수집 동의 여부에 따라서 이메일 key 값이 없을 수 있음 / NullPointerException 조심
+				String naverProfile = profile(access_token);
+				log.info("naverProfile 값 : " + naverProfile);
+				
+				jsonObj = (JSONObject) parser.parse(naverProfile);
+				JSONObject jsonObj2 = (JSONObject) jsonObj.get("response");
 
-				Map<String, String> rMap = (HashMap<String, String>) jsonObj.get("response");
-
-				String id = rMap.get("id");
-				String email = rMap.get("email");
-				String name = rMap.get("name");
-
-				rMap.put("email", EncryptUtil.encAES128CBC(rMap.get("email")));
+				String id = (String) jsonObj2.get("id");
+				String name = (String) jsonObj2.get("name");
+				String email = "";
+				// 이메일 값이 있다면
+				if(!"null".equals(String.valueOf(jsonObj2.get("email")))) {
+					email = jsonObj2.get("email").toString();
+				}
+				
+				log.info("id : " + id);
+				log.info("email : " + email);
+				log.info("name : " + name);
+				
+				Map<String, String> rMap = new HashMap<String, String>();
+				
+				rMap.put("id", id);
+				rMap.put("email", EncryptUtil.encAES128CBC(email));
+				rMap.put("name", name);
 				rMap.put("sns_type", "naver");
 				rMap.put("reg_dt", DateUtil.getDateTime("yyyyMMddhhmmss"));
 				rMap.put("chg_dt", DateUtil.getDateTime("yyyyMMddhhmmss"));
-
+            
 				log.info(rMap.get("id"));
 				log.info(rMap.get("email"));
 				log.info(rMap.get("name"));
 				log.info(rMap.get("sns_type"));
 				log.info(rMap.get("reg_dt"));
 				log.info(rMap.get("chg_dt"));
-
+            
 				// 회원가입 결과
 				// 0 성공, 1 중복 아이디(본인확인), 2 시스템 에러
 				int result = userInfoService.insertSnsUserInfo(rMap);
@@ -588,7 +600,7 @@ public class UserInfoController {
 		} catch (Exception e) {
 			log.info("오류 코드 : " + e);
 		} finally {
-			log.info(this.getClass().getName() + ".user/naverCallback end");
+			log.info(this.getClass().getName() + ".naverCallback end");
 		}
 
 		return "/user/NaverCallback";
@@ -672,128 +684,176 @@ public class UserInfoController {
 		return "/user/KakaoLogin";
 	}
 
-	// 카카오로 로그인(access_token 받기)
+	// 카카오로 로그인 결과
 	@RequestMapping(value = "user/KakaoCallback")
 	public String kakaoCallback(HttpSession session, HttpServletRequest request, HttpServletResponse response,
 			ModelMap model) throws Exception {
 		log.info(this.getClass().getName() + ".kakaoCallback start");
+		
+		// 토큰 받기
+		// parameter 값
+		String grant_type = "authorization_code";
+		String client_id = "110a9e0b91af88905005827ac500c075";// REST API 키;
+		String redirect_uri = URLEncoder.encode("http://localhost:8090/user/KakaoCallback.do", "UTF-8");
+		String code = request.getParameter("code");// 사용자가 [동의하고 계속하기] 선택, 로그인 진행 시 얻은 토큰 요청 인가 코드
+		
+		String apiURL;
+		apiURL = "https://kauth.kakao.com/oauth/token?";
+		apiURL += "grant_type=" + grant_type;
+		apiURL += "&client_id=" + client_id;
+		apiURL += "&redirect_uri=" + redirect_uri;
+		apiURL += "&code=" + code;
+		log.info("apiURL=" + apiURL);
+		
+		// Response 값
+		String access_token = ""; // 사용자 액세스 토큰 값
+		String refresh_token = ""; // 사용자 리프레시 토큰 값
+		
+		try {
+			URL url = new URL(apiURL);
+			HttpURLConnection con = (HttpURLConnection) url.openConnection();
+			con.setRequestMethod("GET");
+			int responseCode = con.getResponseCode();
+			log.info("responseCode : " + responseCode);
+			BufferedReader br;
+			if (responseCode == 200) { // 정상 호출
+				br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+			} else { // 에러 발생
+				br = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+			}
+			String inputLine;
+			StringBuffer res = new StringBuffer();
+			while ((inputLine = br.readLine()) != null) {
+				res.append(inputLine);
+			}
+			br.close();
+			
+			if (responseCode == 200) {
+				
+				// 결과값 파싱
+				JSONParser parser = new JSONParser();
+				Object obj = parser.parse(res.toString());
+				JSONObject jsonObj = (JSONObject) obj;
+				
+				// access_token 값
+				access_token += (String) jsonObj.get("access_token");
+				refresh_token += (String) jsonObj.get("refresh_token");
+				log.info("access_token 값 : " + access_token);
+				log.info("refresh_token 값 : " + refresh_token);
+				
+				//{"id":1954933070,"connected_at":"2021-10-19T03:12:51Z","properties":{"nickname":"백준호"},"kakao_account":{"profile_nickname_needs_agreement":false,"profile":{"nickname":"백준호"},"has_email":true,"email_needs_agreement":true}}
+				//{"id":1954933070,"connected_at":"2021-10-19T08:16:05Z","properties":{"nickname":"백준호"},"kakao_account":{"profile_nickname_needs_agreement":false,"profile":{"nickname":"백준호"},"has_email":true,"email_needs_agreement":false,"is_email_valid":true,"is_email_verified":true,"email":"baek_0101@naver.com"}}
+				// kakaoProfile 함수로 프로필 값 가져오기
+				// 이메일 수집 동의 여부에 따라서 이메일 key 값이 없을 수 있음 / NullPointerException 조심
+				String kakaoProfile = kakaoProfile(access_token);
+				
+				log.info("kakaoProfile 값 : " + kakaoProfile);
+				
+				jsonObj = (JSONObject) parser.parse(kakaoProfile);
+				JSONObject jsonObj2 = (JSONObject) jsonObj.get("kakao_account");
+				
+				String id = jsonObj.get("id").toString();
+				String nickname = ((JSONObject) jsonObj2.get("profile")).get("nickname").toString();
+				String email = "";
+				
+				// 이메일 값이 있다면
+				if(!"null".equals(String.valueOf(jsonObj2.get("email")))) {
+					email = jsonObj2.get("email").toString();
+				}
+								
+				log.info("id : " + id);
+				log.info("nickname : " + nickname);
+				log.info("email : " + email);
+				
+				Map<String, String> rMap = new HashMap<String, String>();
+				
+				rMap.put("id", id);
+				rMap.put("email", EncryptUtil.encAES128CBC(email));
+				rMap.put("name", nickname);
+				rMap.put("sns_type", "kakao");
+				rMap.put("reg_dt", DateUtil.getDateTime("yyyyMMddhhmmss"));
+				rMap.put("chg_dt", DateUtil.getDateTime("yyyyMMddhhmmss"));
+            
+				log.info(rMap.get("id"));
+				log.info(rMap.get("email"));
+				log.info(rMap.get("name"));
+				log.info(rMap.get("sns_type"));
+				log.info(rMap.get("reg_dt"));
+				log.info(rMap.get("chg_dt"));
+            
+				// 회원가입 결과
+				// 0 성공, 1 중복 아이디(본인확인), 2 시스템 에러
+				int result = userInfoService.insertSnsUserInfo(rMap);
 
-		String code = request.getParameter("code");
-		String state = request.getParameter("state");
-		log.info("code : " + code);
-//	String client_id = "110a9e0b91af88905005827ac500c075";// 앱 REST API 키;
-//	String redirect_uri = URLEncoder.encode("http://localhost:8090/user/KakaoCallback.do", "UTF-8");
-//	String response_type = "code";
-//	String apiURL;
-//	apiURL = "http://kauth.kakao.com/oauth/authorize?";
-//	apiURL += "client_id=" + client_id;
-//	apiURL += "&redirect_uri=" + redirect_uri;
-//	apiURL += "&response_type=" + response_type;
-//	log.info("apiURL=" + apiURL);
-//
-//	try {
-//		URL url = new URL(apiURL);
-//		HttpURLConnection con = (HttpURLConnection) url.openConnection();
-//		con.setRequestMethod("GET");
-//		int responseCode = con.getResponseCode();
-//		BufferedReader br;
-//		log.info("responseCode=" + responseCode);
-//		if (responseCode == 200) { // 정상 호출
-//			br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-//		} else { // 에러 발생
-//			br = new BufferedReader(new InputStreamReader(con.getErrorStream()));
-//		}
-//		String inputLine;
-//		StringBuffer res = new StringBuffer();
-//		while ((inputLine = br.readLine()) != null) {
-//			res.append(inputLine);
-//		}
-//		br.close();
-//		if (responseCode == 200) {
-//
-//			// res 파싱
-//			JSONParser parser = new JSONParser();
-//			Object obj = parser.parse(res.toString());
-//			JSONObject jsonObj = (JSONObject) obj;
-//
-//			log.info(jsonObj);
-//			
-//					// token 값
-//					access_token += (String) jsonObj.get("access_token");
-//					refresh_token += (String) jsonObj.get("refresh_token");
-//					log.info("access_token 값 : " + access_token);
-//					log.info("refresh_token 값 : " + refresh_token);
-//
-//					// 프로필 값
-//					String profileRes = profile(access_token);
-//					log.info("profileRes 값 : " + profileRes);
-//					jsonObj = (JSONObject) parser.parse(profileRes);
-//
-//					// https://developers.naver.com/docs/login/profile/profile.md 참고
-//
-//					Map<String, String> rMap = (HashMap<String, String>) jsonObj.get("response");
-//
-//					String id = rMap.get("id");
-//					String email = rMap.get("email");
-//					String name = rMap.get("name");
-//
-//					rMap.put("email", EncryptUtil.encAES128CBC(rMap.get("email")));
-//					rMap.put("sns_type", "naver");
-//					rMap.put("reg_dt", DateUtil.getDateTime("yyyyMMddhhmmss"));
-//					rMap.put("chg_dt", DateUtil.getDateTime("yyyyMMddhhmmss"));
-//
-//					log.info(rMap.get("id"));
-//					log.info(rMap.get("email"));
-//					log.info(rMap.get("name"));
-//					log.info(rMap.get("sns_type"));
-//					log.info(rMap.get("reg_dt"));
-//					log.info(rMap.get("chg_dt"));
-//
-//					// 회원가입 결과
-//					// 0 성공, 1 중복 아이디(본인확인), 2 시스템 에러
-//					int result = userInfoService.insertSnsUserInfo(rMap);
-//
-//					if (!"".equals(email) && result == 0) {// 이메일 발송
-//
-//						log.info("메시지 보낼 이메일 : " + email);
-//
-//						MailDTO eDTO = new MailDTO();
-//
-//						String toMail = email;
-//						String title = "Eword 회원가입을 환영합니다.";
-//						String content = name + "님 회원가입을 환영합니다. 본인이 아니시라면 관리자에게 문의 하시기 바랍니다.\n"
-//								+ "Eword http://13.124.9.63:8080/main.do\n";
-//
-//						eDTO.setToMail(toMail);
-//						eDTO.setTitle(title);
-//						eDTO.setContents(content);
-//
-//						// 결과(0 실패, 1 성공)
-//						int sendRes = mailService.doSendMail(eDTO);
-//
-//						log.info("메일 전송 결과 : " + sendRes);
-//
-//						eDTO = null;
-//						
-//						session.setAttribute("SS_USER_ID", rMap.get("id"));
-//
-//					}
-//					if(result != 2) {
-//						
-//						log.info("회원정보 확인 후 세션 적용");
-//						session.setAttribute("SS_USER_ID", rMap.get("id"));
-//						session.setAttribute("BLIND_ID", rMap.get("id").substring(0, 4)+"****");
-//					}
-//					model.addAttribute("res", String.valueOf(result));
-//					rMap = null;
-//			}
-//		} catch (Exception e) {
-//			log.info("오류 코드 : " + e);
-//		} finally {
-//			log.info(this.getClass().getName() + ".kakaoCallback end");
-//		}
-//		
+				if (!"".equals(email) && result == 0) {// 이메일 발송
+
+					log.info("메시지 보낼 이메일 : " + email);
+
+					MailDTO eDTO = new MailDTO();
+
+					String toMail = email;
+					String title = "Eword 회원가입을 환영합니다.";
+					String content = nickname + "님 회원가입을 환영합니다. 본인이 아니시라면 관리자에게 문의 하시기 바랍니다.\n"
+							+ "Eword http://13.124.9.63:8080/main.do\n";
+
+					eDTO.setToMail(toMail);
+					eDTO.setTitle(title);
+					eDTO.setContents(content);
+
+					// 결과(0 실패, 1 성공)
+					int sendRes = mailService.doSendMail(eDTO);
+
+					log.info("메일 전송 결과 : " + sendRes);
+
+					eDTO = null;
+
+					session.setAttribute("SS_USER_ID", rMap.get("id"));
+
+				}
+				if (result != 2) {
+
+					log.info("회원정보 확인 후 세션 적용");
+					session.setAttribute("SS_USER_ID", rMap.get("id"));
+					session.setAttribute("BLIND_ID", rMap.get("id").substring(0, 4) + "****");
+				}
+				model.addAttribute("res", String.valueOf(result));
+				rMap = null;
+			}
+		} catch (Exception e) {
+			log.info("오류 코드 : " + e);
+		} finally {
+			log.info(this.getClass().getName() + ".kakaoCallback end");
+		}
+		
 		return "/user/KakaoCallback";
 	}
+	// ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ 카카오 회원 프로필 조회 함수 ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓
+	public static String kakaoProfile(String access_token) throws Exception{
+
+		URL url = new URL("https://kapi.kakao.com/v2/user/me");
+		HttpURLConnection con = (HttpURLConnection) url.openConnection();
+		con.setRequestMethod("GET");
+		
+		// 요청에 필요한 Header에 포함될 내용
+        con.setRequestProperty("Authorization", "Bearer " + access_token);
+		
+		int responseCode = con.getResponseCode();
+		BufferedReader br;
+		if (responseCode == 200) { // 정상 호출
+			br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+		} else { // 에러 발생
+			br = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+		}
+		String inputLine;
+		StringBuffer res = new StringBuffer();
+		while ((inputLine = br.readLine()) != null) {
+			res.append(inputLine);
+		}
+		br.close();
+			
+			
+		return res.toString();
+	}
+	// ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ 카카오 회원 프로필 조회 함수 ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑
 
 }

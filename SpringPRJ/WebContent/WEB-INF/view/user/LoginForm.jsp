@@ -1,5 +1,6 @@
 <%@include file="/WEB-INF/view/SideMenu.jsp"%>
 <%@include file="/WEB-INF/view/user/NaverLogin.jsp"%>
+<%@include file="/WEB-INF/view/user/KakaoLogin.jsp"%>
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
 
@@ -10,8 +11,9 @@
 	//페이지 로딩 완료 후 실행함
 	$(window).on("load", function(){
 		makeCard();
+		
 	})
-
+		
 	//카드 만들기
 	function makeCard() {
 	
@@ -31,7 +33,9 @@
 		basicCard += 		'</div>';
 		basicCard += 		'<button type="submit" class="btn btn-primary btn-block">로그인</button>'
 		basicCard += 	'</form>';
-		basicCard += 	'<a href="<%=apiURL%>"><img height="35" src="/img/NaverLoginButton.png"/></a>';
+		basicCard += 	'<hr>';
+		basicCard += 	'<a href="<%=navarApiURL%>"><img height="40px" style="margin-bottom:10px" src="/img/NaverLoginButton.png"/></a></br>';
+		basicCard += 	'<a href="<%=kakaoApiURL%>"><img height="40px" src="/img/kakaoLoginButton.png"/></a>';
 		basicCard += 	'<hr>';
 		basicCard += 	'<div class="text-center">';
 		basicCard += 		'<a class="small" href="forgot-password.html">비밀번호 찾기</a>';

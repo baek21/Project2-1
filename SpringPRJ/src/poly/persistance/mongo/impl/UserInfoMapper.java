@@ -467,7 +467,7 @@ public class UserInfoMapper implements IUserInfoMapper {
 				// 인덱스 생성(유니크)
 				IndexOptions indexOptions = new IndexOptions().unique(true);
 				mongodb.getCollection(colNm).createIndex(
-						Indexes.compoundIndex(Indexes.ascending("id"), Indexes.ascending("name"))
+						Indexes.compoundIndex(Indexes.ascending("id"), Indexes.ascending("sns_type"))
 						, indexOptions);
 			}
 

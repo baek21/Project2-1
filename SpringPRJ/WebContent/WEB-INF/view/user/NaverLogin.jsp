@@ -15,10 +15,10 @@
     String redirectURI = URLEncoder.encode("http://localhost:8090/user/NaverCallback.do", "UTF-8");
     SecureRandom random = new SecureRandom();
     String state = new BigInteger(130, random).toString();
-    String apiURL = "https://nid.naver.com/oauth2.0/authorize?response_type=code";
-    apiURL += "&client_id=" + clientId;
-    apiURL += "&redirect_uri=" + redirectURI;
-    apiURL += "&state=" + state;
+    String navarApiURL = "https://nid.naver.com/oauth2.0/authorize?response_type=code";
+    navarApiURL += "&client_id=" + clientId;
+    navarApiURL += "&redirect_uri=" + redirectURI;
+    navarApiURL += "&state=" + state;
     session.setAttribute("state", state);
  %>
 </body>
