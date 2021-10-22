@@ -55,8 +55,8 @@
 				
 				$(function(){
 					$("#keywords").jQCloud(words, {
-						width:600,
-						height:700,
+						width:$("#content").outerWidth(),
+						height:$("#content").outerHeight(),
 						colors: ["#FFB400", "#0000FF", "#0078FF", "#86A5FF", "#00A5FF"],
 						fontSize: { from: 0.1, to: 0.02 }
 					});

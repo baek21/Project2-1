@@ -97,7 +97,7 @@
 					jsonData = null;
 					
 					var options = {
-						  title: 'Chess opening moves',
+						  title: 'Word frequency',
 						  height: json.length*30,
 						  legend: { position: 'none' },
 						  //chart: { title: '영어 단어 차트',

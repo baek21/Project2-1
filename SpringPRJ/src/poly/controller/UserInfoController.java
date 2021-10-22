@@ -474,8 +474,8 @@ public class UserInfoController {
 			ModelMap model) throws Exception {
 		log.info(this.getClass().getName() + ".naverCallback start");
 
-		String clientId = "Zr9qkKrxbEI0orbLK8fF";// 애플리케이션 클라이언트 아이디값";
-		String clientSecret = "AZKCuLBjcT";// 애플리케이션 클라이언트 시크릿값";
+		String clientId = "";// 애플리케이션 클라이언트 아이디값";
+		String clientSecret = "";// 애플리케이션 클라이언트 시크릿값";
 		String code = request.getParameter("code");
 		String state = request.getParameter("state");
 		String redirectURI = URLEncoder.encode("http://localhost:8090/user/NaverCallback.do", "UTF-8");
@@ -531,7 +531,7 @@ public class UserInfoController {
 				jsonObj = (JSONObject) parser.parse(naverProfile);
 				JSONObject jsonObj2 = (JSONObject) jsonObj.get("response");
 
-				String id = (String) jsonObj2.get("id");
+				String id = "naver-" + (String) jsonObj2.get("id");
 				String name = (String) jsonObj2.get("name");
 				String email = "";
 				// 이메일 값이 있다면
@@ -693,7 +693,7 @@ public class UserInfoController {
 		// 토큰 받기
 		// parameter 값
 		String grant_type = "authorization_code";
-		String client_id = "110a9e0b91af88905005827ac500c075";// REST API 키;
+		String client_id = "";// REST API 키;
 		String redirect_uri = URLEncoder.encode("http://localhost:8090/user/KakaoCallback.do", "UTF-8");
 		String code = request.getParameter("code");// 사용자가 [동의하고 계속하기] 선택, 로그인 진행 시 얻은 토큰 요청 인가 코드
 		
@@ -741,8 +741,6 @@ public class UserInfoController {
 				log.info("access_token 값 : " + access_token);
 				log.info("refresh_token 값 : " + refresh_token);
 				
-				//{"id":1954933070,"connected_at":"2021-10-19T03:12:51Z","properties":{"nickname":"백준호"},"kakao_account":{"profile_nickname_needs_agreement":false,"profile":{"nickname":"백준호"},"has_email":true,"email_needs_agreement":true}}
-				//{"id":1954933070,"connected_at":"2021-10-19T08:16:05Z","properties":{"nickname":"백준호"},"kakao_account":{"profile_nickname_needs_agreement":false,"profile":{"nickname":"백준호"},"has_email":true,"email_needs_agreement":false,"is_email_valid":true,"is_email_verified":true,"email":"baek_0101@naver.com"}}
 				// kakaoProfile 함수로 프로필 값 가져오기
 				// 이메일 수집 동의 여부에 따라서 이메일 key 값이 없을 수 있음 / NullPointerException 조심
 				String kakaoProfile = kakaoProfile(access_token);
@@ -752,7 +750,7 @@ public class UserInfoController {
 				jsonObj = (JSONObject) parser.parse(kakaoProfile);
 				JSONObject jsonObj2 = (JSONObject) jsonObj.get("kakao_account");
 				
-				String id = jsonObj.get("id").toString();
+				String id = "kakao-" + jsonObj.get("id").toString();
 				String nickname = ((JSONObject) jsonObj2.get("profile")).get("nickname").toString();
 				String email = "";
 				

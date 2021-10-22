@@ -9,7 +9,7 @@
 </head>
 <body>
 <%
-String client_id = "110a9e0b91af88905005827ac500c075";// REST API 키;
+String client_id = "";// REST API 키;
 String redirect_uri = URLEncoder.encode("http://localhost:8090/user/KakaoCallback.do", "UTF-8");
 String response_type = "code";
 String kakaoApiURL;

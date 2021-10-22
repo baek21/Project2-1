@@ -68,7 +68,7 @@ if(rMap==null){
 		basicCard +='<center>';
 		basicCard +='<div class="p-5 bg-white shadow" style="max-width: 600px; border-radius: 1em;">';
 		basicCard +=	'<div class="text-center">';
-		basicCard +=		'<h1 class="h4 text-gray-900 mb-4">회원정보 수정</h1>';
+		basicCard +=		'<h1 class="h4 text-gray-900 mb-4">회원정보 관리</h1>';
 		basicCard +=	'</div>';
 		basicCard +=	'<form name="f" method="post" class="user" action="/user/UserUpdate.do" onsubmit="return doRegUserCheck(this);">';
 		basicCard +=		'<div class="form-group">';
